@@ -1,4 +1,4 @@
-
+'
 Introduction
 Acipenseridae are a family of long-lived fish commonly known as sturgeon, the vast majority of which are threatened or endangered (IUCN, 2022). Though many sturgeon species face extinction, their biology is understudied and their exact distribution is often unclear due to their lack of abundance (Zholdasova, 1997). I examined the exploratory research question, how does sturgeon sampling effort and species richness change across different geographical regions? Additionally, I explored how sturgeon sampling completeness varies across continents. It is interesting to investigate sampling effort and completeness across continents for sturgeon since there are know incongruencies in sturgeon distribution between present day and known historical distribution.
 Results
@@ -16,7 +16,7 @@ Gastner, M. T. 2020, November 1. Chapter 21 Multi-panel Plots. https://michaelga
 IUCN. 2022. The IUCN Red List of Threatened Species. Version 2022-1. https://www.iucnredlist.org. Accessed on [07-10-2022].
 Moreno, M., and M. Basille. 2018, October 25. Drawing beautiful maps programmatically with R, sf and ggplot2 — Part 1: Basics. https://r-spatial.org/r/2018/10/25/ggplot2-sf-2.html.
 Moreno, M., and M. Basille. 2018, October 25. Drawing beautiful maps programmatically with R, sf and ggplot2 — Part 2: Layers. https://r-spatial.org/r/2018/10/25/ggplot2-sf-2.html.
-Zholdasova, I. 1997. Sturgeons and the Aral Sea Ecological catastrophe. Sturgeon Biodiversity and Conservation 48:373–380.
+Zholdasova, I. 1997. Sturgeons and the Aral Sea Ecological catastrophe. Sturgeon Biodiversity and Conservation 48:373–380.'
 
 
 
@@ -177,6 +177,16 @@ par(mfrow = c(3, 1))
 ylim <- c(0, 12)
 xlim <- c(0, 200)
 
+
+
+
+#### EDIT: when attempting to plot the bin richness vs bar-coded sample plots, the following error occured:
+# "Error in plot.new() : figure margins too large"
+# To fix this error, the following line of code was added:
+par(mar=c(1,1,1,1))
+
+
+
 #Plot of BIN richness vs # of individuals barcoded from Asia
 bin.rich_vs_barcoded.samples <- rarecurve(Acip.bin.AS.transpose, xlab = "Samples Barcoded", ylab = "BIN Richness", main = "Sturgeon Samples from Asia", ylim = ylim, xlim = xlim)
 
@@ -190,9 +200,11 @@ bin.rich_vs_barcoded.samples <- rarecurve(Acip.bin.NA.transpose, xlab = "Samples
 par(mfrow = c(1, 1))
 bin.rich_vs_barcoded.samples <- rarecurve(Acip.bin.EUAS.transpose, xlab = "Samples Barcoded", ylab = "BIN Richness", main = "Sturgeon Samples from Eurasia", ylim = ylim, xlim = c(0, 400))
 
-#How does sturgeon sample abundance vary by latitude? by longitude?
-hist(Acip.bin.lat.lon$lat)
-hist(Acip.bin.lat.lon$lon)
+
+
+#### Deleted latitude and longitude histograms as they were already included earlier
+
+
 
 #MAP CODE adapted from https://r-spatial.org/r/2018/10/25/ggplot2-sf.html
 # and from https://r-spatial.org/r/2018/10/25/ggplot2-sf-2.html
@@ -219,3 +231,6 @@ ggplot(data = world.map) +
 
 #Now save the map as jpg in working directory
 ggsave("Sturgeon Sampling Locations.jpg", width = 12, height = 6, dpi = "screen")
+
+
+
