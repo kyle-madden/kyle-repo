@@ -104,10 +104,6 @@ Acip.bin.country <- Acip.bin %>%
 #View all countries
 unique(Acip.bin.country$country)
 
-#Index all fish that are from North American countries into 1 variable
-Acip.NA <- Acip.bin.country %>%
-  filter (country == 'Canada' | country == 'United States')
-
 #To determine which samples from Russia go into the Asian vs Europe sturgeon group, I subset all sturgeon samples from Russia into a separate variable and look at the "region" characteristic to see how many unique regions they come from, and display the regions
 Acip.russia <- Acip.bin.country %>%
   filter (country == 'Russia') %>%
@@ -115,65 +111,52 @@ Acip.russia <- Acip.bin.country %>%
 
 unique(Acip.russia$region) 
 
-#after researching these regions, I now know most samples are from Asia, except those from the Astrakhan and Volga River regions, which are both West of the Caspian Sea, which is my arbitrary Asia/Europe dividing line. So, I will index those Russian-Asian samples with all samples from Asian countries
-Acip.AS <- Acip.bin.country %>%
-  filter (region == 'Ob River' | region == 'Selenga River' | region == 'Lena River' | region == 'Yenisei River' | region == 'Amur River' | country == 'China' | country == 'Uzbekistan' | country == 'Kazakhstan' | country == 'Turkmenistan' | country == 'Iran')
 
-#Index all European samples together, including the 2 Russian-European regions
-Acip.EU <- Acip.bin.country %>%
-  filter (region == 'Volga River' | region == 'Astrakhan' | country == 'Austria' | country == 'Azerbaijan'  | country == 'Italy' | country == 'Turkey' | country == 'Germany' | country == 'Czech Republic' | country == 'Hungary' | country == 'France' | country == 'Ukraine' | country == 'Romania' | country == 'Slovakia' | country == 'United Kingdom')
+#### Created a function to simplify the process of separating the data by continent. A list of the countries and regions are formal arguments as well as a set of data that will be filtered based on the inputted lists. region_list is set to a default value of NULL because region will only be used for Russian regions, which can be either in Asia or Europe. For all other continents, only country data will be used. An if statement will be used to determine if regions are included in the filtering.
+Regional_filtering_analysis <- function(whole_set, country_list, region_list = NULL){
+  lst <- whole_set
+  
+  if (is.null(region_list) == F){
+    lst <- whole_set %>%
+      filter(country %in% country_list | region %in% region_list)}
+  else{
+    lst <- whole_set %>%
+      filter(country %in% country_list)}
+  # Print the number of unique species and the unique species names in each group to compare species richness of each group. 
+  print(length(lst$species_name))
+  print(unique(lst$species_name))
+  
+  # Determine the number if BINs in each group
+  View(lst_bin <- lst %>%
+    group_by(bin_uri) %>%
+    count(bin_uri))
+  
+  # Transpose the bin data of each continental data set so the BIN IDs become column titles 
+  lst_transpose <- pivot_wider(data = lst_bin, names_from = bin_uri, values_from = n)
+  
+  # Return the transposed product to be used for plot generation
+  return(lst_transpose)
+}
+#### Create county and region lists to be called as arguments for the Regional_filtering_analysis function
+NA_countries <- c('Canada', 'United States')
+AS_countries <- c('China','Uzbekistan', 'Kazakhstan', 'Turkmenistan', 'Iran')
+AS_regions <- c('Ob River', 'Selenga River','Lena River', 'Yenisei River' , 'Amur River')
+EU_countries <- c('Austria', 'Azerbaijan', 'Italy', 'Turkey', 'Germany' , 'Czech Republic', 'Hungary', 'France', 'Ukraine', 'Romania' , 'Slovakia' , 'United Kingdom')
+EU_regions <- c('Volga River', 'Astrakhan')
+AS_EU_countries <- c('China','Uzbekistan', 'Kazakhstan', 'Turkmenistan', 'Iran', 'Austria', 'Azerbaijan', 'Italy', 'Turkey', 'Germany' , 'Czech Republic', 'Hungary', 'France', 'Ukraine', 'Romania' , 'Slovakia' , 'United Kingdom')
 
-#Index all European AND Asian samples together as one group
-Acip.EUAS <- Acip.bin.country %>%
-  filter (country == 'Austria' | country == 'Azerbaijan'  | country == 'Italy' | country == 'Turkey' | country == 'Germany' | country == 'Czech Republic' | country == 'Hungary' | country == 'France' | country == 'Ukraine' | country == 'Romania' | country == 'Slovakia' | country == 'United Kingdom'| country == 'China' | country == 'Uzbekistan' | country == 'Kazakhstan' | country == 'Turkmenistan' | country == 'Iran')
 
-
-
-
-
-#DATA ANALYSIS/FIGURE
-
-#How does species richness compare across the three groups?
-length(unique(Acip.NA$species_name))
-length(unique(Acip.EU$species_name))
-length(unique(Acip.AS$species_name))
-length(unique(Acip.EUAS$species_name))
-
-#What species make up each group and are there any species that exist across multiple groups?
-unique(Acip.NA$species_name)
-unique(Acip.EU$species_name)
-unique(Acip.AS$species_name)
-unique(Acip.EUAS$species_name)
+#### Call the Regional_filtering_analysis function with created lists
+Acip.bin.NA.transpose <- Regional_filtering_analysis(Acip.bin.country, NA_countries)
+Acip.bin.AS.transpose <- Regional_filtering_analysis(Acip.bin.country, AS_countries, AS_regions)
+Acip.bin.EU.transpose <- Regional_filtering_analysis(Acip.bin.country, EU_countries, EU_regions)
+Acip.bin.EUAS.transpose <- Regional_filtering_analysis(Acip.bin.country, AS_EU_countries)
 
 #These species exist in both the EU and Asia groups: "Huso huso", "Huso huso", "Acipenser ruthenus", "Acipenser gueldenstaedtii", "Acipenser nudiventris", "Acipenser stellatus", "Acipenser baerii".
 
 #"Acipenser oxyrinchus" was the only species in common between NA and EU. No species in common between NA and Asia groups.
 
-#How many samples belong to each BIN?
-Acip.bin_uri.NA <- Acip.NA %>%
-     group_by(bin_uri) %>%
-     count(bin_uri)
 
-Acip.bin_uri.EU <- Acip.EU %>%
-  group_by(bin_uri) %>%
-  count(bin_uri)
-
-Acip.bin_uri.AS <- Acip.AS %>%
-  group_by(bin_uri) %>%
-  count(bin_uri)
-
-Acip.bin_uri.EUAS <- Acip.EUAS %>%
-  group_by(bin_uri) %>%
-  count(bin_uri)
-
-#Transpose Acip.bin.<continent> data so that BIN IDs become column titles
-Acip.bin.NA.transpose <- pivot_wider(data = Acip.bin_uri.NA, names_from  = bin_uri, values_from = n)
-
-Acip.bin.EU.transpose <- pivot_wider(data = Acip.bin_uri.EU, names_from  = bin_uri, values_from = n)
-
-Acip.bin.AS.transpose <- pivot_wider(data = Acip.bin_uri.AS, names_from  = bin_uri, values_from = n)
-
-Acip.bin.EUAS.transpose <- pivot_wider(data = Acip.bin_uri.EUAS, names_from  = bin_uri, values_from = n)
 
 #4 panel Figure comparing the BIN richness - #of samples across the different regions
 #https://michaelgastner.com/R_for_QR/multi-panel-plots.html is the tutorial I followed and code adapted to make multi panel figure
@@ -182,21 +165,20 @@ ylim <- c(0, 12)
 xlim <- c(0, 200)
 
 
-
 #### EDIT: when attempting to plot the bin richness vs bar-coded sample plots, the following error occurred: "Error in plot.new() : figure margins too large"
 # To fix this error, the following line of code was added:
 par(mar=c(1,1,1,1))
-
 
 
 #Plot of BIN richness vs # of individuals barcoded from Asia
 bin.rich_vs_barcoded.samples <- rarecurve(Acip.bin.AS.transpose, xlab = "Samples Barcoded", ylab = "BIN Richness", main = "Sturgeon Samples from Asia", ylim = ylim, xlim = xlim)
 
 #Plot of BIN richness vs # of individuals barcoded from Europe
-bin.rich_vs_barcoded.samples <- rarecurve(Acip.bin.AS.transpose, xlab = "Samples Barcoded", ylab = "BIN Richness", main = "Sturgeon Samples from Europe", ylim = ylim, xlim = xlim)
+bin.rich_vs_barcoded.samples <- rarecurve(Acip.bin.EU.transpose, xlab = "Samples Barcoded", ylab = "BIN Richness", main = "Sturgeon Samples from Europe", ylim = ylim, xlim = xlim)
 
 #Plot of BIN richness vs # of individuals barcoded from North America
 bin.rich_vs_barcoded.samples <- rarecurve(Acip.bin.NA.transpose, xlab = "Samples Barcoded", ylab = "BIN Richness", main = "Sturgeon Samples from North America", ylim = ylim, xlim = xlim)
+
 
 #Plot of BIN richness vs # of individuals barcoded from Eurasia for comparison
 par(mfrow = c(1, 1))
@@ -204,7 +186,7 @@ bin.rich_vs_barcoded.samples <- rarecurve(Acip.bin.EUAS.transpose, xlab = "Sampl
 
 
 
-#### Deleted latitude and longitude histograms as they were already included earlier
+#### Deleted repeated latitude and longitude histograms
 
 
 
@@ -221,15 +203,17 @@ sampling.sites <- data.frame(longitude = Acip.bin.lat.lon$lon, latitude = Acip.b
 
 
 
-####EDIT: Adding a Russian River map figure
+#### Adding a Russian River map figure
 
 # Load Russian map data from file
 russia <- st_read("gadm41_RUS.gpkg", "ADM_ADM_3") %>%
   filter(NAME_1 != "Chukot")
 
 # Use 'rivers' data set and filter to include Russian rivers used in Sturgeon data set
+river_names <- c("Ob", "Amur", "Lena" , "Yenisey", "Volga", "Selenga")
+
 russian_rivers <- rivers %>%
-  filter(name == "Ob" | name == "Amur" | name == "Lena" | name == "Yenisey" | name == "Volga" | name == "Selenga")
+  filter(name %in% river_names)
 
 # Create river labels using points from russian_rivers
 point_s = c(4, 28, 59, 15, 69, 47)
@@ -247,7 +231,7 @@ russian_map <- tm_shape(russia)+
   tm_dots()+
   tm_text("name")
 
-# turn Russian map into a grob object so it can be plotted next to sampling data plot
+#### turn Russian map into a grob object so it can be plotted next to sampling data plot
 r_map <- tmap_grob(russian_map)
 
 
@@ -270,7 +254,5 @@ plot_grid(sampling_site_map, r_map)
 
 
 #Now save the map as jpg in working directory
-ggsave("Sturgeon Sampling Locations.jpg", width = 12, height = 6, dpi = "screen")
-
-
+ggsave("Sturgeon Sampling Locations.jpg", width = 14, height = 7, dpi = "screen")
 
