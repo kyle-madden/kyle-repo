@@ -37,6 +37,7 @@ library("ggspatial")
 #### New Libraries for new figure
 library(tmap)
 data(rivers)
+library(cowplot)
 
 
 
@@ -221,28 +222,40 @@ class(world.map)
 sampling.sites <- data.frame(longitude = Acip.bin.lat.lon$lon, latitude = Acip.bin.lat.lon$lat)
 
 
+####EDIT: Adding a Russian River map figure
 
-####Russian River map figure
+# Load Russian map data from file
 russia <- st_read("gadm41_RUS.gpkg", "ADM_ADM_3") %>%
   filter(NAME_1 != "Chukot")
 
+# Use 'rivers' data set and filter to include Russian rivers used in Sturgeon data set
 russian_rivers <- rivers %>%
   filter(name == "Ob" | name == "Amur" | name == "Lena" | name == "Yenisey" | name == "Volga" | name == "Selenga")
 
+# Create river labels using points from russian_rivers
 point_s = c(4, 28, 59, 15, 69, 47)
-russian_river_point <- russian_rivers$geometry[point_s]
-class(russian_river_point)
+name = russian_rivers$name[point_s]
+russian_river_point <- as.data.frame(name) %>%
+  add_column(point = (russian_rivers$geometry[point_s]))
 
+# create Russian map with the russia shape object, river object, and point labels
 russian_map <- tm_shape(russia)+
   tm_fill("grey30")+
   tm_borders() +
   tm_shape(russian_rivers) +
-  tm_lines("lightcyan1")
+  tm_lines("lightcyan1")+
+  tm_shape(st_as_sf(russian_river_point))+
+  tm_dots()+
+  tm_text("name")
+
+# turn Russian map into a grob object so it can be plotted next to sampling data plot
+r_map <- tmap_grob(russian_map)
+
 
 
 
 #Create map with sampling sites
-ggplot(data = world.map) +
+sampling_site_map <- ggplot(data = world.map) +
   geom_sf() +
   coord_sf(xlim = c(-120, 110), ylim = c(20, 80), expand = FALSE) +
   xlab("Longitude") + ylab("Latitude") +
@@ -252,6 +265,9 @@ ggplot(data = world.map) +
                          pad_x = unit(0.75, "in"), pad_y = unit(0.5, "in"),
                          style = north_arrow_fancy_orienteering) +
   geom_point(data = sampling.sites, aes(x = sampling.sites$lon, y = sampling.sites$lat), size = 3, shape = 21, fill = "darkred")
+
+#### Plotting the sampling site data with the Russian river data
+plot_grid(sampling_site_map, r_map)
 
 #Now save the map as jpg in working directory
 ggsave("Sturgeon Sampling Locations.jpg", width = 12, height = 6, dpi = "screen")
