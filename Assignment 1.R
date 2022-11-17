@@ -1,3 +1,5 @@
+########
+#### Report
 '
 Introduction
 Acipenseridae are a family of long-lived fish commonly known as sturgeon, the vast majority of which are threatened or endangered (IUCN, 2022). Though many sturgeon species face extinction, their biology is understudied and their exact distribution is often unclear due to their lack of abundance (Zholdasova, 1997). I examined the exploratory research question, how does sturgeon sampling effort and species richness change across different geographical regions? Additionally, I explored how sturgeon sampling completeness varies across continents. It is interesting to investigate sampling effort and completeness across continents for sturgeon since there are know incongruencies in sturgeon distribution between present day and known historical distribution.
@@ -18,13 +20,18 @@ Moreno, M., and M. Basille. 2018, October 25. Drawing beautiful maps programmati
 Moreno, M., and M. Basille. 2018, October 25. Drawing beautiful maps programmatically with R, sf and ggplot2 — Part 2: Layers. https://r-spatial.org/r/2018/10/25/ggplot2-sf-2.html.
 Zholdasova, I. 1997. Sturgeons and the Aral Sea Ecological catastrophe. Sturgeon Biodiversity and Conservation 48:373–380.'
 
-
-
+########
+#### Set working directory and get packages/libraries
 
 #set wd each time you start a R session
-setwd("C:/Users/Kyle Madden/OneDrive - University of Guelph/!MSc/Courses/BINF 6210/R files/Assignment 1")
-install.packages(c("cowplot", "googleway", "ggplot2", "ggrepel", 
-                   "ggspatial", "libwgeom", "sf", "rnaturalearth", "rnaturalearthdata", "tidyverse", "vegan"))
+#setwd("C:/Users/Kyle Madden/OneDrive - University of Guelph/!MSc/Courses/BINF 6210/R files/Assignment 1")
+
+#### Created a list and loop to install packages if user does not have
+packages = (c("cowplot", "googleway", "ggplot2", "ggrepel", "ggspatial", "libwgeom", "sf", "rnaturalearth", "rnaturalearthdata", "tidyverse", "vegan"))
+for(element in packages){
+  if (!requireNamespace(element, quietly = TRUE))
+    install.packages(element)
+}
 
 library("tidyverse")
 library("vegan")
@@ -33,14 +40,14 @@ library("sf")
 library("rnaturalearth")
 library("rnaturalearthdata")
 library("ggspatial")
-
-#### New Libraries for new figure
-library(tmap)
+####
+library("tmap")
+library("cowplot")
 data(rivers)
-library(cowplot)
 
+########
 
-
+#### Get Sturgeon data:
 #downloaded all Acipenseridae (Sturgeon) data on October 6 2022
 Acipenseridae <- read_tsv("http://www.boldsystems.org/index.php/API_Public/combined?taxon=Acipenseridae&format=tsv")
 
@@ -49,11 +56,7 @@ write_tsv(Acipenseridae, "Acipenseridae_BOLD_data.tsv")
 
 #create Acipenser variable from hard disk
 Acipenser <- read_tsv("Acipenseridae_BOLD_data.tsv")
-
-
-
-
-
+########
 #DATA EXPLORATION
 
 #checking to make sure data types make sense for each variable
@@ -111,8 +114,11 @@ Acip.russia <- Acip.bin.country %>%
 
 unique(Acip.russia$region) 
 
+########
+#### DATA ANALYSIS:
 
 #### Created a function to simplify the process of separating the data by continent. A list of the countries and regions are formal arguments as well as a set of data that will be filtered based on the inputted lists. region_list is set to a default value of NULL because region will only be used for Russian regions, which can be either in Asia or Europe. For all other continents, only country data will be used. An if statement will be used to determine if regions are included in the filtering.
+
 Regional_filtering_analysis <- function(whole_set, country_list, region_list = NULL){
   lst <- whole_set
   
@@ -137,6 +143,7 @@ Regional_filtering_analysis <- function(whole_set, country_list, region_list = N
   # Return the transposed product to be used for plot generation
   return(lst_transpose)
 }
+
 #### Create county and region lists to be called as arguments for the Regional_filtering_analysis function
 NA_countries <- c('Canada', 'United States')
 AS_countries <- c('China','Uzbekistan', 'Kazakhstan', 'Turkmenistan', 'Iran')
@@ -156,7 +163,8 @@ Acip.bin.EUAS.transpose <- Regional_filtering_analysis(Acip.bin.country, AS_EU_c
 
 #"Acipenser oxyrinchus" was the only species in common between NA and EU. No species in common between NA and Asia groups.
 
-
+########
+#### PLOTS:
 
 #4 panel Figure comparing the BIN richness - #of samples across the different regions
 #https://michaelgastner.com/R_for_QR/multi-panel-plots.html is the tutorial I followed and code adapted to make multi panel figure
@@ -165,11 +173,12 @@ ylim <- c(0, 12)
 xlim <- c(0, 200)
 
 
-#### EDIT: when attempting to plot the bin richness vs bar-coded sample plots, the following error occurred: "Error in plot.new() : figure margins too large"
+#### When attempting to plot the bin richness vs bar-coded sample plots, the following error occurred: "Error in plot.new() : figure margins too large"
 # To fix this error, the following line of code was added:
 par(mar=c(1,1,1,1))
 
 
+#### RARECURVE PLOTS:
 #Plot of BIN richness vs # of individuals barcoded from Asia
 bin.rich_vs_barcoded.samples <- rarecurve(Acip.bin.AS.transpose, xlab = "Samples Barcoded", ylab = "BIN Richness", main = "Sturgeon Samples from Asia", ylim = ylim, xlim = xlim)
 
@@ -185,11 +194,10 @@ par(mfrow = c(1, 1))
 bin.rich_vs_barcoded.samples <- rarecurve(Acip.bin.EUAS.transpose, xlab = "Samples Barcoded", ylab = "BIN Richness", main = "Sturgeon Samples from Eurasia", ylim = ylim, xlim = c(0, 400))
 
 
-
 #### Deleted repeated latitude and longitude histograms
 
 
-
+#### SAMPLING SITE MAPS:
 #MAP CODE adapted from https://r-spatial.org/r/2018/10/25/ggplot2-sf.html
 # and from https://r-spatial.org/r/2018/10/25/ggplot2-sf-2.html
 theme_set(theme_light())
@@ -202,9 +210,7 @@ class(world.map)
 sampling.sites <- data.frame(longitude = Acip.bin.lat.lon$lon, latitude = Acip.bin.lat.lon$lat)
 
 
-
 #### Adding a Russian River map figure
-
 # Load Russian map data from file
 russia <- st_read("gadm41_RUS.gpkg", "ADM_ADM_3") %>%
   filter(NAME_1 != "Chukot")
@@ -233,7 +239,6 @@ russian_map <- tm_shape(russia)+
 
 #### turn Russian map into a grob object so it can be plotted next to sampling data plot
 r_map <- tmap_grob(russian_map)
-
 
 
 #Create map with sampling sites
