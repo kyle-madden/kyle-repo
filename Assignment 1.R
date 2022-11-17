@@ -27,11 +27,12 @@ Zholdasova, I. 1997. Sturgeons and the Aral Sea Ecological catastrophe. Sturgeon
 #setwd("C:/Users/Kyle Madden/OneDrive - University of Guelph/!MSc/Courses/BINF 6210/R files/Assignment 1")
 
 #### Created a list and loop to install packages if user does not have
-packages = (c("cowplot", "googleway", "ggplot2", "ggrepel", "ggspatial", "libwgeom", "sf", "rnaturalearth", "rnaturalearthdata", "tidyverse", "vegan"))
+packages = (c("cowplot", "ggplot2", "ggspatial", "sf", "rnaturalearth", "rnaturalearthdata", "tidyverse", "vegan", "tmap"))
 for(element in packages){
   if (!requireNamespace(element, quietly = TRUE))
     install.packages(element)
 }
+rm(element, packages)
 
 library("tidyverse")
 library("vegan")
