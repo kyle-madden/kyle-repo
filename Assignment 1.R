@@ -1,4 +1,6 @@
-
+########
+#### Report
+'
 Introduction
 Acipenseridae are a family of long-lived fish commonly known as sturgeon, the vast majority of which are threatened or endangered (IUCN, 2022). Though many sturgeon species face extinction, their biology is understudied and their exact distribution is often unclear due to their lack of abundance (Zholdasova, 1997). I examined the exploratory research question, how does sturgeon sampling effort and species richness change across different geographical regions? Additionally, I explored how sturgeon sampling completeness varies across continents. It is interesting to investigate sampling effort and completeness across continents for sturgeon since there are know incongruencies in sturgeon distribution between present day and known historical distribution.
 Results
@@ -16,15 +18,21 @@ Gastner, M. T. 2020, November 1. Chapter 21 Multi-panel Plots. https://michaelga
 IUCN. 2022. The IUCN Red List of Threatened Species. Version 2022-1. https://www.iucnredlist.org. Accessed on [07-10-2022].
 Moreno, M., and M. Basille. 2018, October 25. Drawing beautiful maps programmatically with R, sf and ggplot2 — Part 1: Basics. https://r-spatial.org/r/2018/10/25/ggplot2-sf-2.html.
 Moreno, M., and M. Basille. 2018, October 25. Drawing beautiful maps programmatically with R, sf and ggplot2 — Part 2: Layers. https://r-spatial.org/r/2018/10/25/ggplot2-sf-2.html.
-Zholdasova, I. 1997. Sturgeons and the Aral Sea Ecological catastrophe. Sturgeon Biodiversity and Conservation 48:373–380.
+Zholdasova, I. 1997. Sturgeons and the Aral Sea Ecological catastrophe. Sturgeon Biodiversity and Conservation 48:373–380.'
 
-
-
+########
+#### Set working directory and get packages/libraries
 
 #set wd each time you start a R session
-setwd("C:/Users/Kyle Madden/OneDrive - University of Guelph/!MSc/Courses/BINF 6210/R files/Assignment 1")
-install.packages(c("cowplot", "googleway", "ggplot2", "ggrepel", 
-                   "ggspatial", "libwgeom", "sf", "rnaturalearth", "rnaturalearthdata", "tidyverse", "vegan"))
+#setwd("C:/Users/Kyle Madden/OneDrive - University of Guelph/!MSc/Courses/BINF 6210/R files/Assignment 1")
+
+#### Created a list and loop to install packages if user does not have
+packages = (c("cowplot", "ggplot2", "ggspatial", "sf", "rnaturalearth", "rnaturalearthdata", "tidyverse", "vegan", "tmap"))
+for(element in packages){
+  if (!requireNamespace(element, quietly = TRUE))
+    install.packages(element)
+}
+rm(element, packages)
 
 library("tidyverse")
 library("vegan")
@@ -33,10 +41,14 @@ library("sf")
 library("rnaturalearth")
 library("rnaturalearthdata")
 library("ggspatial")
+####
+library("tmap")
+library("cowplot")
 
 
+########
 
-
+#### Get Sturgeon data:
 #downloaded all Acipenseridae (Sturgeon) data on October 6 2022
 Acipenseridae <- read_tsv("http://www.boldsystems.org/index.php/API_Public/combined?taxon=Acipenseridae&format=tsv")
 
@@ -45,11 +57,7 @@ write_tsv(Acipenseridae, "Acipenseridae_BOLD_data.tsv")
 
 #create Acipenser variable from hard disk
 Acipenser <- read_tsv("Acipenseridae_BOLD_data.tsv")
-
-
-
-
-
+########
 #DATA EXPLORATION
 
 #checking to make sure data types make sense for each variable
@@ -100,10 +108,6 @@ Acip.bin.country <- Acip.bin %>%
 #View all countries
 unique(Acip.bin.country$country)
 
-#Index all fish that are from North American countries into 1 variable
-Acip.NA <- Acip.bin.country %>%
-  filter (country == 'Canada' | country == 'United States')
-
 #To determine which samples from Russia go into the Asian vs Europe sturgeon group, I subset all sturgeon samples from Russia into a separate variable and look at the "region" characteristic to see how many unique regions they come from, and display the regions
 Acip.russia <- Acip.bin.country %>%
   filter (country == 'Russia') %>%
@@ -111,65 +115,58 @@ Acip.russia <- Acip.bin.country %>%
 
 unique(Acip.russia$region) 
 
-#after researching these regions, I now know most samples are from Asia, except those from the Astrakhan and Volga River regions, which are both West of the Caspian Sea, which is my arbitrary Asia/Europe dividing line. So, I will index those Russian-Asian samples with all samples from Asian countries
-Acip.AS <- Acip.bin.country %>%
-  filter (region == 'Ob River' | region == 'Selenga River' | region == 'Lena River' | region == 'Yenisei River' | region == 'Amur River' | country == 'China' | country == 'Uzbekistan' | country == 'Kazakhstan' | country == 'Turkmenistan' | country == 'Iran')
+########
+#### DATA ANALYSIS:
 
-#Index all European samples together, including the 2 Russian-European regions
-Acip.EU <- Acip.bin.country %>%
-  filter (region == 'Volga River' | region == 'Astrakhan' | country == 'Austria' | country == 'Azerbaijan'  | country == 'Italy' | country == 'Turkey' | country == 'Germany' | country == 'Czech Republic' | country == 'Hungary' | country == 'France' | country == 'Ukraine' | country == 'Romania' | country == 'Slovakia' | country == 'United Kingdom')
+#### Created a function to simplify the process of separating the data by continent. A list of the countries and regions are formal arguments as well as a set of data that will be filtered based on the inputted lists. region_list is set to a default value of NULL because region will only be used for Russian regions, which can be either in Asia or Europe. For all other continents, only country data will be used. An if statement will be used to determine if regions are included in the filtering.
 
-#Index all European AND Asian samples together as one group
-Acip.EUAS <- Acip.bin.country %>%
-  filter (country == 'Austria' | country == 'Azerbaijan'  | country == 'Italy' | country == 'Turkey' | country == 'Germany' | country == 'Czech Republic' | country == 'Hungary' | country == 'France' | country == 'Ukraine' | country == 'Romania' | country == 'Slovakia' | country == 'United Kingdom'| country == 'China' | country == 'Uzbekistan' | country == 'Kazakhstan' | country == 'Turkmenistan' | country == 'Iran')
+Regional_filtering_analysis <- function(whole_set, country_list, region_list = NULL){
+  lst <- whole_set
+  
+  if (is.null(region_list) == F){
+    lst <- whole_set %>%
+      filter(country %in% country_list | region %in% region_list)}
+  else{
+    lst <- whole_set %>%
+      filter(country %in% country_list)}
+  # Print the number of unique species and the unique species names in each group to compare species richness of each group. 
+  print(length(lst$species_name))
+  print(unique(lst$species_name))
+  
+  # Determine the number if BINs in each group
+  View(lst_bin <- lst %>%
+    group_by(bin_uri) %>%
+    count(bin_uri))
+  
+  # Transpose the bin data of each continental data set so the BIN IDs become column titles 
+  lst_transpose <- pivot_wider(data = lst_bin, names_from = bin_uri, values_from = n)
+  
+  # Return the transposed product to be used for plot generation
+  return(lst_transpose)
+}
+
+#### Create county and region lists to be called as arguments for the Regional_filtering_analysis function
+NA_countries <- c('Canada', 'United States')
+AS_countries <- c('China','Uzbekistan', 'Kazakhstan', 'Turkmenistan', 'Iran')
+AS_regions <- c('Ob River', 'Selenga River','Lena River', 'Yenisei River' , 'Amur River')
+EU_countries <- c('Austria', 'Azerbaijan', 'Italy', 'Turkey', 'Germany' , 'Czech Republic', 'Hungary', 'France', 'Ukraine', 'Romania' , 'Slovakia' , 'United Kingdom')
+EU_regions <- c('Volga River', 'Astrakhan')
+AS_EU_countries <- c('China','Uzbekistan', 'Kazakhstan', 'Turkmenistan', 'Iran', 'Austria', 'Azerbaijan', 'Italy', 'Turkey', 'Germany' , 'Czech Republic', 'Hungary', 'France', 'Ukraine', 'Romania' , 'Slovakia' , 'United Kingdom')
 
 
+#### Call the Regional_filtering_analysis function with created lists
+Acip.bin.NA.transpose <- Regional_filtering_analysis(Acip.bin.country, NA_countries)
+Acip.bin.AS.transpose <- Regional_filtering_analysis(Acip.bin.country, AS_countries, AS_regions)
+Acip.bin.EU.transpose <- Regional_filtering_analysis(Acip.bin.country, EU_countries, EU_regions)
+Acip.bin.EUAS.transpose <- Regional_filtering_analysis(Acip.bin.country, AS_EU_countries)
 
-
-
-#DATA ANALYSIS/FIGURE
-
-#How does species richness compare across the three groups?
-length(unique(Acip.NA$species_name))
-length(unique(Acip.EU$species_name))
-length(unique(Acip.AS$species_name))
-length(unique(Acip.EUAS$species_name))
-
-#What species make up each group and are there any species that exist across multiple groups?
-unique(Acip.NA$species_name)
-unique(Acip.EU$species_name)
-unique(Acip.AS$species_name)
-unique(Acip.EUAS$species_name)
-
+rm(NA_countries, AS_countries, AS_regions, EU_countries, EU_regions, AS_EU_countries)
 #These species exist in both the EU and Asia groups: "Huso huso", "Huso huso", "Acipenser ruthenus", "Acipenser gueldenstaedtii", "Acipenser nudiventris", "Acipenser stellatus", "Acipenser baerii".
 
 #"Acipenser oxyrinchus" was the only species in common between NA and EU. No species in common between NA and Asia groups.
 
-#How many samples belong to each BIN?
-Acip.bin_uri.NA <- Acip.NA %>%
-     group_by(bin_uri) %>%
-     count(bin_uri)
-
-Acip.bin_uri.EU <- Acip.EU %>%
-  group_by(bin_uri) %>%
-  count(bin_uri)
-
-Acip.bin_uri.AS <- Acip.AS %>%
-  group_by(bin_uri) %>%
-  count(bin_uri)
-
-Acip.bin_uri.EUAS <- Acip.EUAS %>%
-  group_by(bin_uri) %>%
-  count(bin_uri)
-
-#Transpose Acip.bin.<continent> data so that BIN IDs become column titles
-Acip.bin.NA.transpose <- pivot_wider(data = Acip.bin_uri.NA, names_from  = bin_uri, values_from = n)
-
-Acip.bin.EU.transpose <- pivot_wider(data = Acip.bin_uri.EU, names_from  = bin_uri, values_from = n)
-
-Acip.bin.AS.transpose <- pivot_wider(data = Acip.bin_uri.AS, names_from  = bin_uri, values_from = n)
-
-Acip.bin.EUAS.transpose <- pivot_wider(data = Acip.bin_uri.EUAS, names_from  = bin_uri, values_from = n)
+########
+#### PLOTS:
 
 #4 panel Figure comparing the BIN richness - #of samples across the different regions
 #https://michaelgastner.com/R_for_QR/multi-panel-plots.html is the tutorial I followed and code adapted to make multi panel figure
@@ -177,23 +174,32 @@ par(mfrow = c(3, 1))
 ylim <- c(0, 12)
 xlim <- c(0, 200)
 
+
+#### When attempting to plot the bin richness vs bar-coded sample plots, the following error occurred: "Error in plot.new() : figure margins too large"
+# To fix this error, the following line of code was added:
+par(mar=c(1,1,1,1))
+
+
+#### RARECURVE PLOTS:
 #Plot of BIN richness vs # of individuals barcoded from Asia
 bin.rich_vs_barcoded.samples <- rarecurve(Acip.bin.AS.transpose, xlab = "Samples Barcoded", ylab = "BIN Richness", main = "Sturgeon Samples from Asia", ylim = ylim, xlim = xlim)
 
 #Plot of BIN richness vs # of individuals barcoded from Europe
-bin.rich_vs_barcoded.samples <- rarecurve(Acip.bin.AS.transpose, xlab = "Samples Barcoded", ylab = "BIN Richness", main = "Sturgeon Samples from Europe", ylim = ylim, xlim = xlim)
+bin.rich_vs_barcoded.samples <- rarecurve(Acip.bin.EU.transpose, xlab = "Samples Barcoded", ylab = "BIN Richness", main = "Sturgeon Samples from Europe", ylim = ylim, xlim = xlim)
 
 #Plot of BIN richness vs # of individuals barcoded from North America
 bin.rich_vs_barcoded.samples <- rarecurve(Acip.bin.NA.transpose, xlab = "Samples Barcoded", ylab = "BIN Richness", main = "Sturgeon Samples from North America", ylim = ylim, xlim = xlim)
+
 
 #Plot of BIN richness vs # of individuals barcoded from Eurasia for comparison
 par(mfrow = c(1, 1))
 bin.rich_vs_barcoded.samples <- rarecurve(Acip.bin.EUAS.transpose, xlab = "Samples Barcoded", ylab = "BIN Richness", main = "Sturgeon Samples from Eurasia", ylim = ylim, xlim = c(0, 400))
 
-#How does sturgeon sample abundance vary by latitude? by longitude?
-hist(Acip.bin.lat.lon$lat)
-hist(Acip.bin.lat.lon$lon)
 
+#### Deleted repeated latitude and longitude histograms
+
+
+#### SAMPLING SITE MAPS:
 #MAP CODE adapted from https://r-spatial.org/r/2018/10/25/ggplot2-sf.html
 # and from https://r-spatial.org/r/2018/10/25/ggplot2-sf-2.html
 theme_set(theme_light())
@@ -205,17 +211,58 @@ class(world.map)
 #Create sampling site variable with all samples with lon/lat data available
 sampling.sites <- data.frame(longitude = Acip.bin.lat.lon$lon, latitude = Acip.bin.lat.lon$lat)
 
+
+#### Adding a Russian River map figure
+# Load Russian map data from file (retrieved from 'https://gadm.org/download_country.html')
+russia <- st_read("gadm41_RUS.gpkg", "ADM_ADM_3") %>%
+  filter(NAME_1 != "Chukot")
+# Load 'rivers' data from sf package
+data(rivers)
+
+
+# Use 'rivers' data set and filter to include Russian rivers used in Sturgeon data set
+river_names <- c("Ob", "Amur", "Lena" , "Yenisey", "Volga", "Selenga")
+
+russian_rivers <- rivers %>%
+  filter(name %in% river_names)
+
+# Create river labels using points from russian_rivers
+point_s = c(4, 28, 59, 15, 69, 47)
+name = russian_rivers$name[point_s]
+russian_river_point <- as.data.frame(name) %>%
+  add_column(point = (russian_rivers$geometry[point_s]))
+
+# create Russian map with the Russia shape object, river object, and point labels
+russian_map <- tm_shape(russia)+
+  tm_polygons(col = "grey95", border.col = "grey70")+
+  tm_layout(inner.margins = c(0.1), title = "Russian Rivers Sampled", frame = F, title.position = c("left", "top"))+
+  tm_shape(russian_rivers) +
+  tm_lines("darkblue")+
+  tm_shape(st_as_sf(russian_river_point))+
+  tm_dots()+
+  tm_text("name")
+
+#### turn Russian map into a grob object so it can be plotted next to sampling data plot
+r_map <- tmap_grob(russian_map)
+
+
 #Create map with sampling sites
-ggplot(data = world.map) +
+sampling_site_map <- ggplot(data = world.map) +
   geom_sf() +
   coord_sf(xlim = c(-120, 110), ylim = c(20, 80), expand = FALSE) +
   xlab("Longitude") + ylab("Latitude") +
   ggtitle("Sturgeon Sampling Locations", ) + 
-  annotation_scale(location = "br", width_hint = 0.2) +
-  annotation_north_arrow(location = "br", which_north = "true", 
-                         pad_x = unit(0.75, "in"), pad_y = unit(0.5, "in"),
+  annotation_scale(location = "bl", width_hint = 0.2) +
+  annotation_north_arrow(location = "tl", which_north = "true", 
+                         pad_x = unit(0.5, "in"), pad_y = unit(0.5, "in"),
                          style = north_arrow_fancy_orienteering) +
   geom_point(data = sampling.sites, aes(x = sampling.sites$lon, y = sampling.sites$lat), size = 3, shape = 21, fill = "darkred")
 
+
+#### Plotting the sampling site data with the Russian river data
+plot_grid(sampling_site_map, r_map)
+
+
 #Now save the map as jpg in working directory
-ggsave("Sturgeon Sampling Locations.jpg", width = 12, height = 6, dpi = "screen")
+ggsave("Sturgeon Sampling Locations.jpg", width = 14, height = 7, dpi = "screen")
+
