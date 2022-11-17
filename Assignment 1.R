@@ -43,7 +43,7 @@ library("ggspatial")
 ####
 library("tmap")
 library("cowplot")
-data(rivers)
+
 
 ########
 
@@ -159,6 +159,7 @@ Acip.bin.AS.transpose <- Regional_filtering_analysis(Acip.bin.country, AS_countr
 Acip.bin.EU.transpose <- Regional_filtering_analysis(Acip.bin.country, EU_countries, EU_regions)
 Acip.bin.EUAS.transpose <- Regional_filtering_analysis(Acip.bin.country, AS_EU_countries)
 
+rm(NA_countries, AS_countries, AS_regions, EU_countries, EU_regions, AS_EU_countries)
 #These species exist in both the EU and Asia groups: "Huso huso", "Huso huso", "Acipenser ruthenus", "Acipenser gueldenstaedtii", "Acipenser nudiventris", "Acipenser stellatus", "Acipenser baerii".
 
 #"Acipenser oxyrinchus" was the only species in common between NA and EU. No species in common between NA and Asia groups.
@@ -211,9 +212,12 @@ sampling.sites <- data.frame(longitude = Acip.bin.lat.lon$lon, latitude = Acip.b
 
 
 #### Adding a Russian River map figure
-# Load Russian map data from file
+# Load Russian map data from file (retrieved from 'https://gadm.org/download_country.html')
 russia <- st_read("gadm41_RUS.gpkg", "ADM_ADM_3") %>%
   filter(NAME_1 != "Chukot")
+# Load 'rivers' data from sf package
+data(rivers)
+
 
 # Use 'rivers' data set and filter to include Russian rivers used in Sturgeon data set
 river_names <- c("Ob", "Amur", "Lena" , "Yenisey", "Volga", "Selenga")
