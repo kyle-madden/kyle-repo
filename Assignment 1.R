@@ -183,9 +183,7 @@ xlim <- c(0, 200)
 
 
 
-
-#### EDIT: when attempting to plot the bin richness vs bar-coded sample plots, the following error occured:
-# "Error in plot.new() : figure margins too large"
+#### EDIT: when attempting to plot the bin richness vs bar-coded sample plots, the following error occurred: "Error in plot.new() : figure margins too large"
 # To fix this error, the following line of code was added:
 par(mar=c(1,1,1,1))
 
@@ -222,6 +220,7 @@ class(world.map)
 sampling.sites <- data.frame(longitude = Acip.bin.lat.lon$lon, latitude = Acip.bin.lat.lon$lat)
 
 
+
 ####EDIT: Adding a Russian River map figure
 
 # Load Russian map data from file
@@ -238,12 +237,12 @@ name = russian_rivers$name[point_s]
 russian_river_point <- as.data.frame(name) %>%
   add_column(point = (russian_rivers$geometry[point_s]))
 
-# create Russian map with the russia shape object, river object, and point labels
+# create Russian map with the Russia shape object, river object, and point labels
 russian_map <- tm_shape(russia)+
-  tm_fill("grey30")+
-  tm_borders() +
+  tm_polygons(col = "grey95", border.col = "grey70")+
+  tm_layout(inner.margins = c(0.1), title = "Russian Rivers Sampled", frame = F, title.position = c("left", "top"))+
   tm_shape(russian_rivers) +
-  tm_lines("lightcyan1")+
+  tm_lines("darkblue")+
   tm_shape(st_as_sf(russian_river_point))+
   tm_dots()+
   tm_text("name")
@@ -253,21 +252,22 @@ r_map <- tmap_grob(russian_map)
 
 
 
-
 #Create map with sampling sites
 sampling_site_map <- ggplot(data = world.map) +
   geom_sf() +
   coord_sf(xlim = c(-120, 110), ylim = c(20, 80), expand = FALSE) +
   xlab("Longitude") + ylab("Latitude") +
   ggtitle("Sturgeon Sampling Locations", ) + 
-  annotation_scale(location = "br", width_hint = 0.2) +
-  annotation_north_arrow(location = "br", which_north = "true", 
-                         pad_x = unit(0.75, "in"), pad_y = unit(0.5, "in"),
+  annotation_scale(location = "bl", width_hint = 0.2) +
+  annotation_north_arrow(location = "tl", which_north = "true", 
+                         pad_x = unit(0.5, "in"), pad_y = unit(0.5, "in"),
                          style = north_arrow_fancy_orienteering) +
   geom_point(data = sampling.sites, aes(x = sampling.sites$lon, y = sampling.sites$lat), size = 3, shape = 21, fill = "darkred")
 
+
 #### Plotting the sampling site data with the Russian river data
 plot_grid(sampling_site_map, r_map)
+
 
 #Now save the map as jpg in working directory
 ggsave("Sturgeon Sampling Locations.jpg", width = 12, height = 6, dpi = "screen")
