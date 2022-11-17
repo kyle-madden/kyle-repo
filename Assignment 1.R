@@ -34,6 +34,9 @@ library("rnaturalearth")
 library("rnaturalearthdata")
 library("ggspatial")
 
+#### New Libraries for new figure
+library(tmap)
+data(rivers)
 
 
 
@@ -216,6 +219,27 @@ class(world.map)
 
 #Create sampling site variable with all samples with lon/lat data available
 sampling.sites <- data.frame(longitude = Acip.bin.lat.lon$lon, latitude = Acip.bin.lat.lon$lat)
+
+
+
+####Russian River map figure
+russia <- st_read("gadm41_RUS.gpkg", "ADM_ADM_3") %>%
+  filter(NAME_1 != "Chukot")
+
+russian_rivers <- rivers %>%
+  filter(name == "Ob" | name == "Amur" | name == "Lena" | name == "Yenisey" | name == "Volga" | name == "Selenga")
+
+point_s = c(4, 28, 59, 15, 69, 47)
+russian_river_point <- russian_rivers$geometry[point_s]
+class(russian_river_point)
+
+russian_map <- tm_shape(russia)+
+  tm_fill("grey30")+
+  tm_borders() +
+  tm_shape(russian_rivers) +
+  tm_lines("lightcyan1")
+
+
 
 #Create map with sampling sites
 ggplot(data = world.map) +
