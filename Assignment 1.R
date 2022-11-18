@@ -151,7 +151,7 @@ AS_countries <- c('China','Uzbekistan', 'Kazakhstan', 'Turkmenistan', 'Iran')
 AS_regions <- c('Ob River', 'Selenga River','Lena River', 'Yenisei River' , 'Amur River')
 EU_countries <- c('Austria', 'Azerbaijan', 'Italy', 'Turkey', 'Germany' , 'Czech Republic', 'Hungary', 'France', 'Ukraine', 'Romania' , 'Slovakia' , 'United Kingdom')
 EU_regions <- c('Volga River', 'Astrakhan')
-AS_EU_countries <- c('China','Uzbekistan', 'Kazakhstan', 'Turkmenistan', 'Iran', 'Austria', 'Azerbaijan', 'Italy', 'Turkey', 'Germany' , 'Czech Republic', 'Hungary', 'France', 'Ukraine', 'Romania' , 'Slovakia' , 'United Kingdom')
+AS_EU_countries <- c('China','Uzbekistan', 'Kazakhstan', 'Turkmenistan', 'Iran', 'Austria', 'Azerbaijan', 'Italy', 'Turkey', 'Germany' , 'Czech Republic', 'Hungary', 'France', 'Ukraine', 'Romania' , 'Slovakia' , 'United Kingdom', 'Russia)
 
 
 #### Call the Regional_filtering_analysis function with created lists
